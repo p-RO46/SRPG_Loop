@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c4b0981a7fdbc740a2735e65a1f719e, type: 3}
+  m_Name: Strike
+  m_EditorClassIdentifier: 
+  description: "\uAC15\uB825\uD558\uAC8C \uB0B4\uB9AC\uCCD0\uC11C \uC801\uC5D0\uAC8C
+    \uD070 \uD53C\uD574\uB97C \uC785\uD799\uB2C8\uB2E4."
+  attackElement: 0
+  attackType: 0
+  debuff: 0
+  damage: 2
+  skillRangeCSV: {fileID: 4900000, guid: 420e3e3d1da5aa34e9dd456f387802cc, type: 3}

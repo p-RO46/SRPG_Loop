@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98585a61624a11646a29fe15b11811d7, type: 3}
+  m_Name: PlayerSkill
+  m_EditorClassIdentifier: 
+  WarriorSkillData:
+  - {fileID: 11400000, guid: 05671e67f3ff0294f87b416e5c48d6a9, type: 2}
+  - {fileID: 11400000, guid: 1674d27563034094483adbd58128dfd1, type: 2}
+  - {fileID: 11400000, guid: 60c2dca045a050645bcf875e36c46acc, type: 2}
+  - {fileID: 11400000, guid: 105f5299a45364047b06bbda2ef49b87, type: 2}
+  - {fileID: 11400000, guid: c73232ceff7c27741b73e3756bc53ccc, type: 2}
+  MageSkillData: []
