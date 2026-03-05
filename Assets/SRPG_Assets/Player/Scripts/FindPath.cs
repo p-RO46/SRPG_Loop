@@ -4,23 +4,6 @@ using UnityEngine;
 
 public class FindPath // 몬스터들에게도 적용되는 코드
 {
-    public class Node
-    {
-        public Vector2Int pos;
-        public bool isWalkable;
-        public Node parent;
-
-        public int G;
-        public int H;
-        public int F => G + H;
-
-        public Node(int x, int y, bool isWalkable)
-        {
-            pos = new Vector2Int(x, y);
-            this.isWalkable = isWalkable;
-        }
-    }
-
     private MapManager mapManager;
 
     private int _width, _height;
@@ -31,6 +14,7 @@ public class FindPath // 몬스터들에게도 적용되는 코드
         mapManager = _mapManager;
         _width = mapManager.TileMap.Count;
         _height = mapManager.TileMap[0].Count;
+        _nodes = new Node[_width, _height];
 
         for (int x = 0; x < _width; x++)
         {
@@ -41,13 +25,13 @@ public class FindPath // 몬스터들에게도 적용되는 코드
         }
     }
 
-    public void CanReach(Vector2Int cur, int movement)
+    public SkillLocation[,] CanReach(Vector2Int cur, int movement)
     {
         // 현재 위치를 중심으로 했을 때, 도달 가능한 범위를 표시한 배열을 반환한다.
         int max = movement * 2 + 1;
         Node center = new Node(cur.x, cur.y, true); // 시작(중심)위치
         Node[,] temp = new Node[max, max];
-        int[,] result = new int[max, max];
+        SkillLocation[,] result = new SkillLocation[max, max];
 
         for (int i = 0; i < max; i++)
         {
@@ -71,10 +55,13 @@ public class FindPath // 몬스터들에게도 적용되는 코드
                 List<Node> path = FindShortestPath(center.pos, temp[i, j].pos);
                 if (path != null && path.Count <= movement)
                 {
-                    result[i, j] = 1; // 이동 가능하면 1, 아니면 0
+                    result[i, j].location = temp[i, j].pos;
+                    result[i, j].skill = 1; // 이동 가능하면 1, 아니면 0
                 }
             }
         }
+        result[movement, movement].skill = 0; // 현재 서 있는 위치는 제외
+        return result;
     }
 
     public List<Node> FindShortestPath(Vector2Int start, Vector2Int end)

@@ -75,6 +75,6 @@ public class Player : Character
     public override void Attacked(int damage)
     {
         Debug.Log($"\"Player\"가 공격당함! 데미지 : {damage}");
-        _HP -= damage;
+        HP -= damage;
     }
 }

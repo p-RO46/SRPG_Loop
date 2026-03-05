@@ -10,12 +10,12 @@ public class Character
 {
     public E_CharacterType characterType;
 
-    protected int _speed; // 속도. 행동 순서 결정 (높을수록 빠르다)
-    protected int _movement; // 이동력. 이동 가능 범위 결정
-    protected int _attack; // 공격력
-    protected int _defense; // 방어력
-    protected int _HP; // 체력
-
+    public int speed { get; protected set; } // 속도. 행동 순서 결정 (높을수록 빠르다)
+    public int movement { get; protected set; } // 이동력. 이동 가능 범위 결정
+    public int attack { get; protected set; }  // 공격력
+    public int defense { get; protected set; } // 방어력
+    public int HP { get; protected set; } // 체력
+     
     // 배열 기준 좌표. 계속 변화함
     public int locX = 0;
     public int locY = 0;
@@ -26,11 +26,11 @@ public class Character
         locX = _locX;
         locY = _locY;
 
-        _speed = charData.speed;
-        _movement = charData.movement;
-        _attack = charData.attack;
-        _defense = charData.defense;
-        _HP = charData.HP;
+        speed = charData.speed;
+        movement = charData.movement;
+        attack = charData.attack;
+        defense = charData.defense;
+        HP = charData.HP;
     }
 
     public void SetLocation(int x, int y)
@@ -54,6 +54,6 @@ public class Character
     public virtual void Attacked(int damage)
     {
         Debug.Log($"공격당함! 데미지 : {damage}");
-        _HP -= damage;
+        HP -= damage;
     }
 }

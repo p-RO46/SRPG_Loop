@@ -51,6 +51,8 @@ public class MB_PlayerManager : MonoBehaviour
     private GameObject possibleTilePrefab;
     [SerializeField]
     private GameObject impossibleTilePrefab;
+    [SerializeField]
+    private GameObject movableTilePrefab;
 
     [Header("State")]
     [SerializeField]
@@ -68,12 +70,11 @@ public class MB_PlayerManager : MonoBehaviour
     private int currentSkillIndex = 1;
     // 생성한 스킬 타일 프리팹 모음
     private List<GameObject> tilePrefabs = new List<GameObject>();
+    [HideInInspector]
+    public MB_MoveTile[,] moveTiles;
     // Coroutine
     private Coroutine useTurnRoutine = null;
     private Coroutine startTurnRoutine = null;
-
-    // FindPath
-    private FindPath findPath;
     #endregion
     #region Unity LifeCycle
     void Start()
@@ -216,7 +217,7 @@ public class MB_PlayerManager : MonoBehaviour
                 {
                     GameObject tile = PoolManager.Instance.Get(possibleTilePrefab);
 
-                    Vector3 pos = new Vector3(sl.location.x * 2, 0, sl.location.y * 2);
+                    Vector3 pos = new Vector3(sl.location.x * 2, 0.1f, sl.location.y * 2);
                     tile.transform.position = pos;
                     tile.transform.parent = transform;
                     tilePrefabs.Add(tile);
@@ -225,7 +226,7 @@ public class MB_PlayerManager : MonoBehaviour
                 {
                     GameObject tile = PoolManager.Instance.Get(impossibleTilePrefab);
 
-                    Vector3 pos = new Vector3(sl.location.x * 2, 0, sl.location.y * 2);
+                    Vector3 pos = new Vector3(sl.location.x * 2, 0.1f, sl.location.y * 2);
                     tile.transform.position = pos;
                     tile.transform.parent = transform;
                     tilePrefabs.Add(tile);
@@ -249,7 +250,10 @@ public class MB_PlayerManager : MonoBehaviour
     #region Move
     public void ReadyMove()
     {
-
+        SetMoveTiles();
+        // 생성된 타일들에 대해서 상호작용 하도록.
+        // 클릭 이벤트는 타일 프리팹 자체에서 처리하는데
+        // 경로를 보여줘야 하니까 이게 복잡하네
     }
     public void StartMove()
     {
@@ -259,7 +263,6 @@ public class MB_PlayerManager : MonoBehaviour
     {
         yield return null;
     }
-
     private void PlayerRotate_L(InputAction.CallbackContext context)
     {
         player.playerClass.Rotate_L();
@@ -269,6 +272,48 @@ public class MB_PlayerManager : MonoBehaviour
     {
         player.playerClass.Rotate_R();
         SetSkillTiles();
+    }
+
+    private void SetMoveTiles()
+    {
+        ReturnAllTiles();
+
+        FindPath findPath = new FindPath(mapManager);
+        SkillLocation[,] canMove = findPath.CanReach(new Vector2Int(player.locX, player.locY), player.movement);
+
+        int x = canMove.GetLength(0);
+        int y = canMove.GetLength(1);
+
+        // 얘는 여기서 초기화?
+        moveTiles = new MB_MoveTile[x, y];
+
+        for (int i = 0; i < x; i++)
+        {
+            for (int j = 0; j < y; j++)
+            {
+                GameObject tile = PoolManager.Instance.Get(movableTilePrefab);
+
+                Vector3 pos = new Vector3(canMove[i, j].location.x * 2, 0.1f, canMove[i, j].location.y * 2);
+                tile.transform.position = pos;
+                tilePrefabs.Add(tile);
+
+                moveTiles[i, j] = tile.GetComponent<MB_MoveTile>();
+                moveTiles[i, j].SubscribePlayerManager(this, new Vector2Int(i, j));
+            }
+        }
+    }
+    public void SetDestination(Vector2Int dest)
+    {
+        FindPath findPath = new FindPath(mapManager);
+        Vector2Int playerPos = new Vector2Int(player.locX, player.locY);
+        Vector2Int destPos = new Vector2Int(dest.x + player.locX, dest.y + player.locY);
+
+        List<Node> path = findPath.FindShortestPath(playerPos, dest);
+        foreach(Node node in path)
+        {
+            moveTiles[node.pos.x - player.locX, node.pos.y - player.locY].SetPath();
+        }
+        moveTiles[dest.x, dest.y].SetEnd();
     }
     #endregion
     #region Class Swap

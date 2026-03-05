@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PlayerData
   m_EditorClassIdentifier: 
   speed: 1
-  movement: 1
+  movement: 7
   attack: 1
   defense: 1
   HP: 1

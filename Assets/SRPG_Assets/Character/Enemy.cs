@@ -23,6 +23,6 @@ public class Enemy : Character
     public override void Attacked(int damage)
     {
         Debug.Log($"\"{enemyType}\"이(가) 공격당함! 데미지 : {damage}");
-        _HP -= damage;
+        HP -= damage;
     }
 }
