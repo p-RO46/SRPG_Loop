@@ -18,3 +18,6 @@ MonoBehaviour:
   debuff: 0
   damage: 0
   skillRangeCSV: {fileID: 4900000, guid: 49e168d1bdbd42043ac95df16a22e1db, type: 3}
+  animTrigger: AA1
+  anim: {fileID: 0}
+  skillEffect: {fileID: 100000, guid: 876cb26c7c6ab42e49a9cace28b90b8b, type: 3}

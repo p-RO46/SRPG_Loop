@@ -20,11 +20,17 @@ public class Character
     public int locX = 0;
     public int locY = 0;
 
-    public Character(E_CharacterType _characterType, int _locX, int _locY)
+    public Character(E_CharacterType _characterType, int _locX, int _locY, CharacterData charData)
     {
         characterType = _characterType;
         locX = _locX;
         locY = _locY;
+
+        _speed = charData.speed;
+        _movement = charData.movement;
+        _attack = charData.attack;
+        _defense = charData.defense;
+        _HP = charData.HP;
     }
 
     public void SetLocation(int x, int y)

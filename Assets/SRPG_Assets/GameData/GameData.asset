@@ -13,4 +13,8 @@ MonoBehaviour:
   m_Name: GameData
   m_EditorClassIdentifier: 
   playerData: {fileID: 11400000, guid: 809967552ffbbb4468ecffe4604810b0, type: 2}
-  enemyData: []
+  enemyData:
+  - {fileID: 11400000, guid: 62c70d1026c8a2f439ebc63c92d12ccf, type: 2}
+  - {fileID: 11400000, guid: 1a829c6becd72e746bca39a636db4076, type: 2}
+  - {fileID: 11400000, guid: 476752b9830b5cf4f873580f2f791b81, type: 2}
+  - {fileID: 11400000, guid: b177929f122ee1045b3c08c379439636, type: 2}

@@ -3,27 +3,27 @@ using UnityEngine;
 
 public class MapManager : MonoBehaviour
 {
+    [Header("Parents")]
     [SerializeField]
     private Transform MapParent;
+    [SerializeField]
+    private Transform EnemyParent;
 
+    [Header("Prefabs")]
     [SerializeField]
     private GameObject tilePrefab;
     [SerializeField]
     private GameObject obstaclePrefab;
-
-    //[SerializeField]
-    //private GameObject playerPrefab;
     [SerializeField]
     private List<GameObject> enemyPrefabs;
 
-
+    [Header("DB")]
+    public GameData gameData;
+    public PlayerSkill playerSkill;
     [SerializeField]
     private TextAsset tileDatasCSV;
     [SerializeField]
     private TextAsset characterDatasCSV;
-
-    public GameData gameData;
-    public PlayerSkill playerSkill;
 
     /// <summary>
     /// Enum
@@ -105,25 +105,21 @@ public class MapManager : MonoBehaviour
                 if (tempChar == E_CharacterType.PLAYER)
                 {
                     playerObject.transform.position = new Vector3(i * 2, 0, j * 2);
-                        //= Instantiate(playerPrefab, new Vector3(i * 2, 0, j * 2), Quaternion.identity);
                     player = new Player(i, j, (E_PlayerClass)(temp / 10), this);
                     playerObject.GetComponent<MB_PlayerManager>().SetStart();
-                    // C_Map[i].Add(new Player(i, j, (E_PlayerClass)(temp / 10), this));
-                    // 플레이어나 몬스터의 경우, 생성 각도도 좀 신경써주자
-                    // MapManager에 대한 참조를 아예 가지고 가는 것이 좋을 것 같다
                 }
                 else if (tempChar == E_CharacterType.ENEMY)
                 {
-                    EnemyObjects.Add(Instantiate(enemyPrefabs[temp / 10], new Vector3(i * 2, 0, j * 2), Quaternion.identity));
-                    enemys.Add(new Enemy(i, j, (E_EnemyType)(temp / 10), EnemyObjects[enemyIndex++]));
-                    // C_Map[i].Add(new Enemy((E_EnemyType)(temp / 10), EnemyObjects[enemyIndex++]));
-                    // 여기서는 사용하는 enemyPrefab 종류도 다르다
-                    // 맵에 배치된 놈이랑 얘의 연관성을 어떻게 하는가
-                    // Enemy한테 GameObject 주소를 넘겨주는 수 밖에
+                    GameObject enemy = PoolManager.Instance.Get(enemyPrefabs[temp / 10]);
+                    enemy.transform.position = new Vector3(i * 2, 0, j * 2);
+                    enemy.transform.parent = EnemyParent;
+                    EnemyObjects.Add(enemy);
+
+                    enemys.Add(new Enemy(i, j, (E_EnemyType)(temp / 10), EnemyObjects[enemyIndex++], this));
                 }
-                else // 아무것도 없음
+                else 
                 {
-                    //C_Map[i].Add(null);// 이게 나을듯
+                    // 아무것도 없음
                 }
             }
         }

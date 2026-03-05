@@ -1125,6 +1125,7 @@ GameObject:
   - component: {fileID: 2222730260557110278}
   - component: {fileID: 7005885586564304699}
   - component: {fileID: 2815036200581923555}
+  - component: {fileID: 2661465859959957381}
   m_Layer: 0
   m_Name: PlayerPrefab
   m_TagString: Untagged
@@ -1181,6 +1182,32 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e5a41d037c9b9424d94dd2a42523afab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  PlayerInput: {fileID: -944628639613478452, guid: e06677a3fc0659d4192408b31866863e, type: 3}
+  mapManager: {fileID: 0}
+  isTurn: 0
+  totalTurn: 0
+  attackTurn: 1
+  moveTurn: 1
+  freeTurn: 1
+  attackTurnText: {fileID: 0}
+  moveTurnText: {fileID: 0}
+  freeTurnText: {fileID: 0}
+  possibleTilePrefab: {fileID: 6035344016301451423, guid: be892cc2b6fbfd440ba593ae16a16979, type: 3}
+  impossibleTilePrefab: {fileID: 6035344016301451423, guid: 661241940e20fab488438ff35256f637, type: 3}
+  startSkill: 0
+  startMove: 0
+--- !u!114 &2661465859959957381
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5729243143687817727}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61f677b75cf3052429882dbf6fb7fcb6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &5741266708851611885

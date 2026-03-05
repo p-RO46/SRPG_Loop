@@ -55,7 +55,6 @@ public class PlayerClass // 상태 객체
             }
         }
     }
-
     public void Rotate_R() // 시계 방향으로 회전
     {
         int len = skillRange.GetLength(0);
@@ -130,7 +129,6 @@ public class PlayerClass // 상태 객체
             Debug.Log("Error from CalculateRange: index Out Of Range");
         }
     }
-
     public void UseSkill()
     {
         CalculateRange(currentSkillIndex); // 범위 계산 완료
@@ -142,9 +140,19 @@ public class PlayerClass // 상태 객체
             Enemy target = player.mapManager.EnemyExist((int)loc.location.x, (int)loc.location.y);
             if (target != null)
             {
-                target.Attacked(skillData[currentSkillIndex - 1].damage);
+                target.Attacked(CurrentSkillData().damage);
             }
         }
         player.playerClass.currentSkillIndex = 1;
+    }
+    public string SkillAnim()
+    {
+        string trigger = CurrentSkillData().animTrigger;
+        return trigger;
+    }
+
+    public SkillData CurrentSkillData()
+    {
+        return skillData[currentSkillIndex - 1];
     }
 }

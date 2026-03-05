@@ -13,7 +13,8 @@ public class Enemy : Character
     public E_EnemyType enemyType;
     public GameObject enemyObject;
 
-    public Enemy(int _locX, int _locY, E_EnemyType _enemyType, GameObject _enemyObject) : base(E_CharacterType.ENEMY, _locX, _locY)
+    public Enemy(int _locX, int _locY, E_EnemyType _enemyType, GameObject _enemyObject, MapManager _mapManager) 
+        : base(E_CharacterType.ENEMY, _locX, _locY, _mapManager.gameData.enemyData[(int)_enemyType])
     {
         enemyType = _enemyType;
         enemyObject = _enemyObject;

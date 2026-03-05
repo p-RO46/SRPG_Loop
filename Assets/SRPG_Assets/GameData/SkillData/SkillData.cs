@@ -19,6 +19,11 @@ public class SkillData : ScriptableObject
     public TextAsset skillRangeCSV = null; // csv 파일로 저장
     public int[,] skillRange;
 
+    [Header("Effect/Anim")]
+    public string animTrigger;
+    public Animation anim;
+    public GameObject skillEffect; // pooling
+
     // 인스펙터에서 값이 수정될 때마다 호출됨
     private void OnValidate()
     {

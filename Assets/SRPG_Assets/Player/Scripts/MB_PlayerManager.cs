@@ -1,11 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class MB_PlayerManager : MonoBehaviour
 {
+    #region Variables
     [Header("Input Action Asset")]
     [SerializeField]
     private InputActionAsset PlayerInput;
@@ -35,44 +36,55 @@ public class MB_PlayerManager : MonoBehaviour
     [SerializeField]
     private int freeTurn = 1;
 
+    [Header("UI")]
+    [SerializeField]
+    private GameObject gameUI;
+    [SerializeField]
+    private TextMeshProUGUI attackTurnText;
+    [SerializeField]
+    private TextMeshProUGUI moveTurnText;
+    [SerializeField]
+    private TextMeshProUGUI freeTurnText;
+
     [Header("Prefab Pool")]
     [SerializeField]
     private GameObject possibleTilePrefab;
     [SerializeField]
     private GameObject impossibleTilePrefab;
 
-    [Header("Debug")]
-    public bool startTest = false;
+    [Header("State")]
+    [SerializeField]
+    private bool startSkill = false;
+    [SerializeField]
+    private bool startMove = false;
 
+    [Header("Effect Parent")]
+    [SerializeField]
+    private Transform effectParent;
+
+    // Animator
+    private Animator playerAnim;
     // 현재 사용하려고 하는 스킬의 index;
     private int currentSkillIndex = 1;
     // 생성한 스킬 타일 프리팹 모음
     private List<GameObject> tilePrefabs = new List<GameObject>();
-
-    private Coroutine readySkillRoutine = null;
+    // Coroutine
     private Coroutine useTurnRoutine = null;
+    private Coroutine startTurnRoutine = null;
 
+    // FindPath
+    private FindPath findPath;
+    #endregion
+    #region Unity LifeCycle
     void Start()
     {
-        #region Input Action
         SRPG = PlayerInput.FindActionMap("SRPG");
         rotate_L = SRPG.FindAction("SRPG/PlayerRotate/Left");
         rotate_R = SRPG.FindAction("SRPG/PlayerRotate/Right");
         swapSkill = SRPG.FindAction("SRPG/PlayerSkill/Swap");
+        EnableActions();
 
-        rotate_L.Enable();
-        rotate_R.Enable();
-        swapSkill.Enable();
-        rotate_L.performed += PlayerRotate_L;
-        rotate_R.performed += PlayerRotate_R;
-        swapSkill.performed += SwapSkill;
-        #endregion
-    }
-
-    public void SetStart()
-    {
-        player = mapManager.player;
-        UpdateTurns();
+        playerAnim = GetComponent<Animator>();
     }
 
     // Update is called once per frame
@@ -80,26 +92,103 @@ public class MB_PlayerManager : MonoBehaviour
     {
         if (isTurn)
         {
-            if(useTurnRoutine == null)
+            if(startTurnRoutine == null)
             {
-                useTurnRoutine = StartCoroutine(UseTurn());
+                startTurnRoutine = StartCoroutine(StartTurn());
             }
             isTurn = false;
         }
     }
+    #endregion
 
-    private IEnumerator UseTurn()
+    #region Turn Management
+    public void SetStart() // MapManger가 모든 객체를 생성한 뒤 마지막으로 Player를 할당해주기 위함. 생성 전에 할당하면 꼬인다
+    {
+        player = mapManager.player;
+        UpdateTurns();
+    }
+    private void UpdateTurns()
+    {
+        totalTurn = attackTurn + moveTurn + freeTurn;
+    }
+    private IEnumerator StartTurn()
     {
         Debug.Log("UseTurn 시작!");
-        // 테스트용
-        ReadySkill();
+        gameUI.SetActive(true);
+        UpdateUI();
         while (totalTurn > 0)
         {
             yield return null;
         }
         useTurnRoutine = null;
     }
-    
+    #endregion
+
+    #region Attack
+    public void ReadySkill()
+    {
+        Debug.Log("ReadySkill 시작!");
+        if (attackTurn <= 0 && freeTurn <= 0)
+        {
+            Debug.Log("Error! ReadySkill : 스킬 사용 가능 턴이 없습니다.");
+            return;
+        }
+        SetSkillTiles();
+
+        EnableActions();
+    }
+
+    public void StartSkill()
+    {
+        if (useTurnRoutine == null)
+        {
+            useTurnRoutine = StartCoroutine(StartSkillCycle());
+            ReturnAllTiles();
+            player.playerClass.UseSkill();
+            if (attackTurn > 0)
+            {
+                attackTurn--;
+            }
+            else
+            {
+                freeTurn--;
+            }
+            UpdateUI();
+            currentSkillIndex = 1; // Reset
+            UpdateTurns();
+        }
+    }
+    private IEnumerator StartSkillCycle()
+    {
+        DisableActions();
+
+        int x = player.playerClass.realRangeX;
+        int y = player.playerClass.realRangeY;
+
+        for (int i = 0; i < x; i++)
+        {
+            for (int j = 0; j < y; j++)
+            {
+                SkillLocation sl = player.playerClass.GetRealRange(i, j);
+                if(sl.skill == 1)
+                {
+                    GameObject effect = PoolManager.Instance.Get(player.playerClass.CurrentSkillData().skillEffect);
+                    effect.transform.position = new Vector3(sl.location.x * 2, 0, sl.location.y * 2);
+                    effect.transform.parent = effectParent;
+
+                    // 꺼내자마자 파티클 재생 (Stop Action이 다시 활성화됨)
+                    if (effect.TryGetComponent<ParticleSystem>(out var ps))
+                    {
+                        ps.Play();
+                    }
+                }
+            }
+        }
+
+        playerAnim.SetTrigger(player.playerClass.SkillAnim());
+        yield return new WaitForSeconds(3f);
+        useTurnRoutine = null;
+    }
     private void SwapSkill(InputAction.CallbackContext context)
     {
         string keyName = context.control.name;
@@ -110,76 +199,6 @@ public class MB_PlayerManager : MonoBehaviour
         currentSkillIndex = result;
         SetSkillTiles();
     }
-    private void ReadySkill()
-    {
-        Debug.Log("ReadySkill 시작!");
-        if (attackTurn <= 0 && freeTurn <= 0)
-        {
-            Debug.Log("Error! ReadySkill : 스킬 사용 가능 턴이 없습니다.");
-            return;
-        }
-        SetSkillTiles();
-
-        #region Input Action
-        rotate_L.Enable();
-        rotate_R.Enable();
-        swapSkill.Enable();
-        rotate_L.performed += PlayerRotate_L;
-        rotate_R.performed += PlayerRotate_R;
-        swapSkill.performed += SwapSkill;
-        #endregion
-
-        if(readySkillRoutine == null)
-        {
-            readySkillRoutine = StartCoroutine(ReadySkillCycle());
-        }
-    }
-    private IEnumerator ReadySkillCycle()
-    {
-        while (!startTest)
-        {
-            yield return null;
-        }
-
-        UseSkill();
-    }
-    private void UseSkill()
-    {
-        #region Input Action
-        rotate_L.Disable();
-        rotate_R.Disable();
-        swapSkill.Disable();
-        rotate_L.performed -= PlayerRotate_L;
-        rotate_R.performed -= PlayerRotate_R;
-        swapSkill.performed -= SwapSkill;
-        #endregion
-
-        ReturnAllTiles();
-        player.playerClass.UseSkill();
-        if(attackTurn > 0)
-        {
-            attackTurn--;
-        }
-        else
-        {
-            freeTurn--;
-        }
-        currentSkillIndex = 1; // Reset
-        // PlayerClass에 회전 정보 남아있는것도 좀 아니꼬움..
-        UpdateTurns();
-    }
-
-    private void PlayerRotate_L(InputAction.CallbackContext context)
-    {
-        player.playerClass.Rotate_L();
-        SetSkillTiles();
-    }
-    private void PlayerRotate_R(InputAction.CallbackContext context)
-    {
-        player.playerClass.Rotate_R();
-        SetSkillTiles();
-    }
-
     private void SetSkillTiles()
     {
         ReturnAllTiles();
@@ -188,9 +207,9 @@ public class MB_PlayerManager : MonoBehaviour
         int x = player.playerClass.realRangeX;
         int y = player.playerClass.realRangeY;
 
-        for(int i = 0; i < x; i++)
+        for (int i = 0; i < x; i++)
         {
-            for(int j = 0; j < y; j++)
+            for (int j = 0; j < y; j++)
             {
                 SkillLocation sl = player.playerClass.GetRealRange(i, j);
                 if (sl.skill == 1)
@@ -214,7 +233,6 @@ public class MB_PlayerManager : MonoBehaviour
             }
         }
     }
-
     private void ReturnAllTiles()
     {
         // 타일을 모두 풀로 돌려보낸다
@@ -227,9 +245,74 @@ public class MB_PlayerManager : MonoBehaviour
         }
         tilePrefabs = new List<GameObject>();
     }
-
-    private void UpdateTurns()
+    #endregion
+    #region Move
+    public void ReadyMove()
     {
-        totalTurn = attackTurn + moveTurn + freeTurn;
+
     }
+    public void StartMove()
+    {
+
+    }
+    private IEnumerator StartMoveCycle()
+    {
+        yield return null;
+    }
+
+    private void PlayerRotate_L(InputAction.CallbackContext context)
+    {
+        player.playerClass.Rotate_L();
+        SetSkillTiles();
+    }
+    private void PlayerRotate_R(InputAction.CallbackContext context)
+    {
+        player.playerClass.Rotate_R();
+        SetSkillTiles();
+    }
+    #endregion
+    #region Class Swap
+    public void ReadySwapClass()
+    {
+
+    }
+    public void StartSwapClass()
+    {
+
+    }
+    private IEnumerator StartSwapClassCycle()
+    {
+        yield return null;
+    }
+    #endregion
+
+    #region Input Action
+    private void EnableActions()
+    {
+        rotate_L.Enable();
+        rotate_R.Enable();
+        swapSkill.Enable();
+        rotate_L.performed += PlayerRotate_L;
+        rotate_R.performed += PlayerRotate_R;
+        swapSkill.performed += SwapSkill;
+    }
+    private void DisableActions()
+    {
+        rotate_L.Disable();
+        rotate_R.Disable();
+        swapSkill.Disable();
+        rotate_L.performed -= PlayerRotate_L;
+        rotate_R.performed -= PlayerRotate_R;
+        swapSkill.performed -= SwapSkill;
+    }
+    #endregion
+
+    #region UI Update
+    private void UpdateUI()
+    {
+        attackTurnText.text = "Attack Turn : " + attackTurn;
+        moveTurnText.text = "Move Turn : " + moveTurn;
+        freeTurnText.text = "Free Turn : " + freeTurn;
+    }
+    #endregion
 }

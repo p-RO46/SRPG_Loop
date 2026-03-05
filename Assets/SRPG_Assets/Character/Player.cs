@@ -33,7 +33,8 @@ public class Player : Character
     // 공격마다 사용하는 이펙트, 애니메이션
     // 얘네를 묶은 공격 세트 객체가 필요
 
-    public Player(int _locX, int _locY, E_PlayerClass _playerClass, MapManager _mapManager) : base(E_CharacterType.PLAYER, _locX, _locY)
+    public Player(int _locX, int _locY, E_PlayerClass _playerClass, MapManager _mapManager) 
+        : base(E_CharacterType.PLAYER, _locX, _locY, _mapManager.gameData.playerData)
     {
         mapManager = _mapManager;
 
@@ -42,11 +43,6 @@ public class Player : Character
         playerSkill = mapManager.playerSkill;
         playerData = gameData.playerData;
 
-        _speed = playerData.speed;
-        _movement = playerData.movement;
-        _attack = playerData.attack;
-        _defense = playerData.defense;
-        _HP = playerData.HP;
         _loopCount = playerData.loopCount;
 
         // this로 GameData, SkillData 참조 가능하니 괜찮다?

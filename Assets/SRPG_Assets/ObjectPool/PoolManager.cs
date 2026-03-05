@@ -54,7 +54,7 @@ public class PoolManager : MonoBehaviour
             actionOnGet: (obj) => obj.SetActive(true),
             actionOnRelease: (obj) => obj.SetActive(false),
             actionOnDestroy: (obj) => Destroy(obj),
-            maxSize: 50
+            maxSize: 30
         );
 
         return pool;
