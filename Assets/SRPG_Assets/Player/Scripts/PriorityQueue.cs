@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 
+using UnityEngine;
+
 public class PriorityQueue<TElement, TPriority> where TPriority : IComparable<TPriority>
 {
     private List<(TElement Element, TPriority Priority)> _nodes = new List<(TElement, TPriority)>();

@@ -20,13 +20,22 @@ public class FindPath // 몬스터들에게도 적용되는 코드
         {
             for (int y = 0; y < _height; y++)
             {
-                _nodes[x, y] = new Node(x, y, (mapManager.TileMap[x][y].tileType == E_TileType.MOVABLE));
+                _nodes[x, y] = new Node(x, y, mapManager.TileMap[x][y].tileType == E_TileType.MOVABLE);
             }
         }
     }
 
+    /*
     public SkillLocation[,] CanReach(Vector2Int cur, int movement)
     {
+    // 필수: 모든 노드의 데이터 초기화
+    for (int x = 0; x < _width; x++) {
+        for (int y = 0; y < _height; y++) {
+            _nodes[x, y].G = 999999;
+            _nodes[x, y].H = 0;
+            _nodes[x, y].parent = null;
+        }
+    }
         // 현재 위치를 중심으로 했을 때, 도달 가능한 범위를 표시한 배열을 반환한다.
         int max = movement * 2 + 1;
         Node center = new Node(cur.x, cur.y, true); // 시작(중심)위치
@@ -36,22 +45,33 @@ public class FindPath // 몬스터들에게도 적용되는 코드
         for (int i = 0; i < max; i++)
         {
             int x = cur.x - movement + i;
-            if(x < 0 || x > _width) continue;
+            if (x < 0 || x >= _width)
+            {
+                for (int j = 0; j < max; j++)
+                {
+                    temp[i, j] = new Node(x, cur.y - movement + j, false);
+                }
+                continue;
+            }
 
             for (int j = 0; j < max; j++)
             {
                 int y = cur.y - movement + j;
-                if (x < 0 || x > _height) continue;
+                if (y < 0 || y >= _height)
+                {
+                    temp[i, j] = new Node(x, y, false);
+                    continue;
+                }
 
-                temp[i, j] = new Node(x, y, (mapManager.TileMap[i][j].tileType == E_TileType.MOVABLE));
+                temp[i, j] = new Node(x, y, mapManager.TileMap[x][y].tileType == E_TileType.MOVABLE);
             }
         }
 
-        for(int i = 0; i < max; i++)
+        for (int i = 0; i < max; i++)
         {
             for(int j = 0; j < max; j++)
             {
-                if (temp[i, j] == null || !(temp[i, j].isWalkable)) continue;
+                if (!temp[i, j].isWalkable) continue;
                 List<Node> path = FindShortestPath(center.pos, temp[i, j].pos);
                 if (path != null && path.Count <= movement)
                 {
@@ -61,6 +81,55 @@ public class FindPath // 몬스터들에게도 적용되는 코드
             }
         }
         result[movement, movement].skill = 0; // 현재 서 있는 위치는 제외
+        return result;
+    }
+    */
+    // BFS 방식 사용
+    public SkillLocation[,] CanReach(Vector2Int startPos, int movement)
+    {
+        int max = movement * 2 + 1;
+        SkillLocation[,] result = new SkillLocation[max, max];
+
+        // 방문 여부와 거리를 체크하기 위한 큐 (BFS)
+        Queue<Vector2Int> queue = new Queue<Vector2Int>();
+        Dictionary<Vector2Int, int> visited = new Dictionary<Vector2Int, int>();
+
+        queue.Enqueue(startPos);
+        visited[startPos] = 0;
+
+        while (queue.Count > 0)
+        {
+            Vector2Int curr = queue.Dequeue();
+            int dist = visited[curr];
+
+            if (dist >= movement) continue;
+
+            // 상하좌우 탐색
+            foreach (Vector2Int dir in new Vector2Int[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right })
+            {
+                Vector2Int next = curr + dir;
+
+                // 맵 범위 체크 및 이동 가능 여부 체크
+                if (next.x >= 0 && next.x < _width && next.y >= 0 && next.y < _height)
+                {
+                    if (_nodes[next.x, next.y].isWalkable && !visited.ContainsKey(next))
+                    {
+                        visited[next] = dist + 1;
+                        queue.Enqueue(next);
+
+                        // 결과 배열에 저장 (중심점 기준 상대 좌표 계산)
+                        int resX = next.x - startPos.x + movement;
+                        int resY = next.y - startPos.y + movement;
+
+                        if (resX >= 0 && resX < max && resY >= 0 && resY < max)
+                        {
+                            result[resX, resY].location = next;
+                            result[resX, resY].skill = 1;
+                        }
+                    }
+                }
+            }
+        }
         return result;
     }
 
@@ -79,18 +148,17 @@ public class FindPath // 몬스터들에게도 적용되는 코드
         openList.Enqueue(startNode, startNode.F);
         openSet.Add(startNode);
 
-        while(openList.Count > 0)
+        while (openList.Count > 0)
         {
             Node currentNode = openList.Dequeue();
 
-            if(currentNode == targetNode)
+            if (currentNode == targetNode)
             {
                 return RetracePath(startNode, targetNode);
             }
 
             // 탐색 완료
             closedList.Add(currentNode);
-
             // (2) 현재 노드에 인접한, 지나갈 수 있는 노드를 열린 리스트에 넣어준다.
             //     이미 탐색한 노드도 제외?
             foreach (Node neighbor in GetNeighbors(currentNode))
@@ -144,7 +212,7 @@ public class FindPath // 몬스터들에게도 적용되는 코드
         int[] dx = { 0, 0, -1, 1 };
         int[] dy = { -1, 1, 0, 0 };
 
-        for(int i = 0; i < 4; i++)
+        for (int i = 0; i < 4; i++)
         {
             int checkX = node.pos.x + dx[i];
             int checkY = node.pos.y + dy[i];

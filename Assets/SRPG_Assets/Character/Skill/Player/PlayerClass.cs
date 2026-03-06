@@ -3,7 +3,7 @@ using UnityEngine;
 
 public struct SkillLocation
 {
-    public Vector2 location;
+    public Vector2Int location;
     public int skill; // 1:possible / 0:empty / -1:impossible
 }
 
@@ -93,7 +93,7 @@ public class PlayerClass // »óÅÂ °´Ã¼
                     for (int k = 0; k < len; k++)
                     {
                         realRange[i - startX, k].skill = 0;
-                        realRange[i - startX, k].location = new Vector2(-1f, -1f);
+                        realRange[i - startX, k].location = new Vector2Int(-1, -1);
                     }
                     continue;
                 }
@@ -103,7 +103,7 @@ public class PlayerClass // »óÅÂ °´Ã¼
                     if (j < 0 || j >= player.mapManager.TileMap[i].Count)
                     {
                         realRange[i - startX, j - startY].skill = 0;
-                        realRange[i - startX, j - startY].location = new Vector2(-1f, -1f);
+                        realRange[i - startX, j - startY].location = new Vector2Int(-1, -1);
                         continue;
                     }
 
@@ -120,7 +120,7 @@ public class PlayerClass // »óÅÂ °´Ã¼
                             realRange[i - startX, j - startY].skill = -1;
                         }
                     }
-                    realRange[i - startX, j - startY].location = new Vector2(i, j);
+                    realRange[i - startX, j - startY].location = new Vector2Int(i, j);
                 }
             }
         }

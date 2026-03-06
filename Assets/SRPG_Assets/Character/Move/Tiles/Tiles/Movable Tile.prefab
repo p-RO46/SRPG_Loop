@@ -13,8 +13,8 @@ GameObject:
   - component: {fileID: 8985969331298456073}
   - component: {fileID: 2166981979790841441}
   - component: {fileID: -4862741560510844528}
-  m_Layer: 0
-  m_Name: Move Tile
+  m_Layer: 6
+  m_Name: Movable Tile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

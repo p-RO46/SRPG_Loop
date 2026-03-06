@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -64,14 +65,25 @@ public class MB_PlayerManager : MonoBehaviour
     [SerializeField]
     private Transform effectParent;
 
+    [Header("Tile Materials(Move)")]
+    [SerializeField]
+    private Material movableMaterial;
+    [SerializeField]
+    private Material endMaterial;
+    [SerializeField]
+    private Material pathMaterial;
+
     // Animator
     private Animator playerAnim;
     // 현재 사용하려고 하는 스킬의 index;
     private int currentSkillIndex = 1;
+
     // 생성한 스킬 타일 프리팹 모음
     private List<GameObject> tilePrefabs = new List<GameObject>();
     [HideInInspector]
     public MB_MoveTile[,] moveTiles;
+    private List<Node> path = new List<Node>();
+
     // Coroutine
     private Coroutine useTurnRoutine = null;
     private Coroutine startTurnRoutine = null;
@@ -246,6 +258,16 @@ public class MB_PlayerManager : MonoBehaviour
         }
         tilePrefabs = new List<GameObject>();
     }
+    private void PlayerRotate_L(InputAction.CallbackContext context)
+    {
+        player.playerClass.Rotate_L();
+        SetSkillTiles();
+    }
+    private void PlayerRotate_R(InputAction.CallbackContext context)
+    {
+        player.playerClass.Rotate_R();
+        SetSkillTiles();
+    }
     #endregion
     #region Move
     public void ReadyMove()
@@ -257,21 +279,38 @@ public class MB_PlayerManager : MonoBehaviour
     }
     public void StartMove()
     {
+        // path List 를 기반으로 캐릭터의 이동 구현.
 
     }
     private IEnumerator StartMoveCycle()
     {
+        int count = path.Count;
+        while(count > 0)
+        {
+            
+            count--;
+        }
         yield return null;
     }
-    private void PlayerRotate_L(InputAction.CallbackContext context)
+
+    private void MovePlayer()
     {
-        player.playerClass.Rotate_L();
-        SetSkillTiles();
+        // 1. 현재 보고 있는 방향을 파악할 것
+        // 2. 이동해야 할 방향으로 회전할 것
+        // 3. 한 칸 이동
+        // 4. 도착할 때까지 반복.
+
     }
-    private void PlayerRotate_R(InputAction.CallbackContext context)
+    private void RotatePlayer(bool right) // true : right, false : left
     {
-        player.playerClass.Rotate_R();
-        SetSkillTiles();
+        if (right)
+        {
+            transform.Rotate(new Vector3(0, 90, 0));
+        }
+        else
+        {
+            transform.Rotate(new Vector3(0, -90, 0));
+        }
     }
 
     private void SetMoveTiles()
@@ -298,7 +337,7 @@ public class MB_PlayerManager : MonoBehaviour
                 tilePrefabs.Add(tile);
 
                 moveTiles[i, j] = tile.GetComponent<MB_MoveTile>();
-                moveTiles[i, j].SubscribePlayerManager(this, new Vector2Int(i, j));
+                moveTiles[i, j].SetIndex(canMove[i, j].location); // 전체 맵 기준 인덱스
             }
         }
     }
@@ -306,14 +345,28 @@ public class MB_PlayerManager : MonoBehaviour
     {
         FindPath findPath = new FindPath(mapManager);
         Vector2Int playerPos = new Vector2Int(player.locX, player.locY);
-        Vector2Int destPos = new Vector2Int(dest.x + player.locX, dest.y + player.locY);
 
-        List<Node> path = findPath.FindShortestPath(playerPos, dest);
-        foreach(Node node in path)
+        int startX = moveTiles[0, 0].moveTilesIndex.x;
+        int startY = moveTiles[0, 0].moveTilesIndex.y;
+
+        path = findPath.FindShortestPath(playerPos, dest);
+        Debug.Log(path.Count);
+        foreach (Node node in path)
         {
-            moveTiles[node.pos.x - player.locX, node.pos.y - player.locY].SetPath();
+            moveTiles[node.pos.x - startX, node.pos.y - startY].ChangeMaterial(pathMaterial);
         }
-        moveTiles[dest.x, dest.y].SetEnd();
+        moveTiles[dest.x - startX, dest.y - startY].ChangeMaterial(endMaterial);
+    }
+
+    public void CancelPath()
+    {
+        for (int i = 0; i < moveTiles.GetLength(0); i++)
+        {
+            for (int j = 0; j < moveTiles.GetLength(1); j++)
+            {
+                moveTiles[i, j].ChangeMaterial(movableMaterial);
+            }
+        }
     }
     #endregion
     #region Class Swap
