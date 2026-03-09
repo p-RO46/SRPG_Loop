@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -89,14 +88,16 @@ public class MB_PlayerManager : MonoBehaviour
     private Coroutine startTurnRoutine = null;
     #endregion
     #region Unity LifeCycle
-    void Start()
+    private void Awake()
     {
         SRPG = PlayerInput.FindActionMap("SRPG");
         rotate_L = SRPG.FindAction("SRPG/PlayerRotate/Left");
         rotate_R = SRPG.FindAction("SRPG/PlayerRotate/Right");
         swapSkill = SRPG.FindAction("SRPG/PlayerSkill/Swap");
         EnableActions();
-
+    }
+    void Start()
+    {
         playerAnim = GetComponent<Animator>();
     }
 
@@ -112,6 +113,11 @@ public class MB_PlayerManager : MonoBehaviour
             isTurn = false;
         }
     }
+
+    private void OnDisable()
+    {
+        DisableActions();
+    }
     #endregion
 
     #region Turn Management
@@ -124,16 +130,17 @@ public class MB_PlayerManager : MonoBehaviour
     {
         totalTurn = attackTurn + moveTurn + freeTurn;
     }
+    
     private IEnumerator StartTurn()
     {
-        Debug.Log("UseTurn 시작!");
+        // Debug.Log("UseTurn 시작!");
         gameUI.SetActive(true);
         UpdateUI();
         while (totalTurn > 0)
         {
             yield return null;
         }
-        useTurnRoutine = null;
+        startTurnRoutine = null;
     }
     #endregion
 
@@ -256,7 +263,7 @@ public class MB_PlayerManager : MonoBehaviour
                 pooled.ReturnToPool();
             }
         }
-        tilePrefabs = new List<GameObject>();
+        tilePrefabs.Clear();
     }
     private void PlayerRotate_L(InputAction.CallbackContext context)
     {
