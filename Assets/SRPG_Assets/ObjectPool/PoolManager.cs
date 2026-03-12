@@ -44,6 +44,7 @@ public class PoolManager : MonoBehaviour
              createFunc: () =>
             {
                 GameObject obj = Instantiate(prefab);
+                obj.transform.position = new Vector3(0f, -20f, 0f);
                 // 생성 시점에 PooledObject 컴포넌트를 찾아서 풀 참조를 넣어줌
                 var pooledScript = obj.GetComponent<PooledObject>();
                 if (pooledScript == null) pooledScript = obj.AddComponent<PooledObject>();

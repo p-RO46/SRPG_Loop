@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -71,6 +72,9 @@ public class MB_PlayerManager : MonoBehaviour
     private Material endMaterial;
     [SerializeField]
     private Material pathMaterial;
+
+    [Header("Player Move")]
+    [SerializeField] private float moveSpeed = 10f;
 
     // Animator
     private Animator playerAnim;
@@ -280,44 +284,57 @@ public class MB_PlayerManager : MonoBehaviour
     public void ReadyMove()
     {
         SetMoveTiles();
-        // 생성된 타일들에 대해서 상호작용 하도록.
-        // 클릭 이벤트는 타일 프리팹 자체에서 처리하는데
-        // 경로를 보여줘야 하니까 이게 복잡하네
     }
+
     public void StartMove()
     {
+        ReturnAllTiles();
+
         // path List 를 기반으로 캐릭터의 이동 구현.
-
+        if (path == null || path.Count == 0) return;
+        StopAllCoroutines();
+        StartCoroutine(StartMoveCycle());
     }
+
     private IEnumerator StartMoveCycle()
-    {
+    {        
         int count = path.Count;
-        while(count > 0)
+        foreach(Node node in path)
         {
-            
-            count--;
-        }
-        yield return null;
-    }
+            Vector2Int playerPos = new Vector2Int(player.locX, player.locY);
+            Vector3 targetPosition = new Vector3(
+                    node.pos.x * 2, 
+                    transform.position.y,
+                    node.pos.y * 2
+                );
 
-    private void MovePlayer()
-    {
-        // 1. 현재 보고 있는 방향을 파악할 것
-        // 2. 이동해야 할 방향으로 회전할 것
-        // 3. 한 칸 이동
-        // 4. 도착할 때까지 반복.
+            while (Vector3.Distance(transform.position, targetPosition) > 0.05f)
+            {
+                transform.position = Vector3.MoveTowards(
+                    transform.position,
+                    targetPosition,
+                    moveSpeed * Time.deltaTime
+                );
 
-    }
-    private void RotatePlayer(bool right) // true : right, false : left
-    {
-        if (right)
-        {
-            transform.Rotate(new Vector3(0, 90, 0));
+                Vector3 direction = targetPosition - transform.position;
+                if(direction != Vector3.zero)
+                {
+                    transform.rotation = Quaternion.Slerp(
+                        transform.rotation,
+                        Quaternion.LookRotation(direction),
+                        Time.deltaTime * 10f
+                    );
+                }
+                
+                yield return null;
+            }
+            // 정확한 위치로 보정
+            transform.position = targetPosition;
+            player.locX = node.pos.x;
+            player.locY = node.pos.y;
         }
-        else
-        {
-            transform.Rotate(new Vector3(0, -90, 0));
-        }
+        Array.Clear(moveTiles, 0, moveTiles.Length);
+        path.Clear();
     }
 
     private void SetMoveTiles()
@@ -339,12 +356,21 @@ public class MB_PlayerManager : MonoBehaviour
             {
                 GameObject tile = PoolManager.Instance.Get(movableTilePrefab);
 
-                Vector3 pos = new Vector3(canMove[i, j].location.x * 2, 0.1f, canMove[i, j].location.y * 2);
-                tile.transform.position = pos;
-                tilePrefabs.Add(tile);
+                if (canMove[i, j].skill == 0) // false?
+                {
+                    tile.SetActive(false);
+                }
+                else
+                {
+                    tile.SetActive(true);
+                    Vector3 pos = new Vector3(canMove[i, j].location.x * 2, 0.1f, canMove[i, j].location.y * 2);
+                    tile.transform.position = pos;
+                    moveTiles[i, j] = tile.GetComponent<MB_MoveTile>();
+                    moveTiles[i, j].SetIndex(canMove[i, j].location); // 전체 맵 기준 인덱스
+                    Debug.Log("Index : " + i + ", " + j);
+                }
 
-                moveTiles[i, j] = tile.GetComponent<MB_MoveTile>();
-                moveTiles[i, j].SetIndex(canMove[i, j].location); // 전체 맵 기준 인덱스
+                tilePrefabs.Add(tile);
             }
         }
     }
@@ -353,16 +379,23 @@ public class MB_PlayerManager : MonoBehaviour
         FindPath findPath = new FindPath(mapManager);
         Vector2Int playerPos = new Vector2Int(player.locX, player.locY);
 
-        int startX = moveTiles[0, 0].moveTilesIndex.x;
-        int startY = moveTiles[0, 0].moveTilesIndex.y;
-
         path = findPath.FindShortestPath(playerPos, dest);
-        Debug.Log(path.Count);
+
         foreach (Node node in path)
         {
-            moveTiles[node.pos.x - startX, node.pos.y - startY].ChangeMaterial(pathMaterial);
+            int resX = node.pos.x - playerPos.x + player.movement;
+            int resY = node.pos.y - playerPos.y + player.movement;
+
+            moveTiles[resX, resY].ChangeMaterial(pathMaterial);
         }
-        moveTiles[dest.x - startX, dest.y - startY].ChangeMaterial(endMaterial);
+
+        int destResX = dest.x - playerPos.x + player.movement;
+        int destResY = dest.y - playerPos.y + player.movement;
+
+        if (destResX >= 0 && destResX < moveTiles.GetLength(0) && destResY >= 0 && destResY < moveTiles.GetLength(1))
+        {
+            moveTiles[destResX, destResY].ChangeMaterial(endMaterial);
+        }
     }
 
     public void CancelPath()
@@ -371,9 +404,17 @@ public class MB_PlayerManager : MonoBehaviour
         {
             for (int j = 0; j < moveTiles.GetLength(1); j++)
             {
-                moveTiles[i, j].ChangeMaterial(movableMaterial);
+                if (moveTiles[i, j] != null)
+                {
+                    moveTiles[i, j].ChangeMaterial(movableMaterial);
+                }
             }
         }
+    }
+
+    public void RemovePath()
+    {
+        path.Clear();
     }
     #endregion
     #region Class Swap

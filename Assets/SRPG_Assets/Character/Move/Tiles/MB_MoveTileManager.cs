@@ -1,12 +1,12 @@
-using NUnit.Framework.Internal;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
+using UnityEngine.EventSystems; // 필수!
 using UnityEngine.InputSystem;
 
 public class MB_MoveTileManager : MonoBehaviour
 {
     [Header("Interaction Settings")]
+    [SerializeField] private LayerMask UILayer;
     [SerializeField] private LayerMask interactableLayer; // 클릭을 감지할 레이어 선택
     [SerializeField] private float maxDistance = 100f;   // 레이캐스트 최대 거리
 
@@ -28,19 +28,18 @@ public class MB_MoveTileManager : MonoBehaviour
 
     private void Update()
     {
+        // 마우스 위치 가져오기
+        Vector2 mousePos = Mouse.current.position.ReadValue();
+
         // 1. 마우스 왼쪽 버튼 클릭 감지
         if (Mouse.current.leftButton.wasPressedThisFrame)
         {
-            /*
-            // 2. UI를 클릭 중이라면 3D 오브젝트 선택 로직은 건뛰
+            // 마우스가 UI 위에 있다면 아래 로직(게임 오브젝트 클릭)을 무시합니다.
             if (EventSystem.current.IsPointerOverGameObject())
             {
-                Debug.Log("UI 클릭 중!");
                 return;
             }
-            */
 
-            Vector2 mousePos = Mouse.current.position.ReadValue();
             Ray ray = Camera.main.ScreenPointToRay(mousePos);
             RaycastHit hit;
 
@@ -56,16 +55,6 @@ public class MB_MoveTileManager : MonoBehaviour
         }
         else if(currentSelectedObject == null)
         {
-            /*
-            // 2. UI를 클릭 중이라면 3D 오브젝트 선택 로직은 건뛰
-            if (EventSystem.current.IsPointerOverGameObject())
-            {
-                ClearLastHover();
-                return;
-            }
-            */
-
-            Vector2 mousePos = Mouse.current.position.ReadValue();
             Ray ray = Camera.main.ScreenPointToRay(mousePos);
             RaycastHit hit;
 
@@ -86,7 +75,6 @@ public class MB_MoveTileManager : MonoBehaviour
                     if (renderer != null)
                     {
                         renderer.material = hoverMaterial;
-                        // Debug.Log(lastHoveredObject.name + " 위에 마우스 있음");
                     }
                 }
             }

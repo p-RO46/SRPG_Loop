@@ -23,32 +23,49 @@ public class CameraManager: MonoBehaviour
 
     [Header("Camera Move")]
     [SerializeField] private float moveSpeed = 10f;
+    [SerializeField] private Vector2 minPos = new Vector2(-50f, -50f); // X, Z 최소
+    [SerializeField] private Vector2 maxPos = new Vector2(50f, 50f);   // X, Z 최대
+    [SerializeField] private float minHeight = 0f;
+    [SerializeField] private float maxHeight = 10f;
+
+    [Header("Zoom Settings")]
+    [SerializeField] private float zoomSpeed = 10f;
+    [SerializeField] private float minFOV = 30f;
+    [SerializeField] private float maxFOV = 60f;
+    private Camera cam;
 
     private InputAction IA_CameraRotate;
     private InputAction IA_CameraMove;
+    private InputAction IA_CameraVerticalMove;
+    private InputAction IA_CameraZoom;
 
     private void Awake()
     {
+        cam = GetComponent<Camera>();
+
         InputActionMap srpg = playerInput.FindActionMap("SRPG");
         IA_CameraRotate = srpg.FindAction("SRPG/Camera/Rotate");
         IA_CameraMove = srpg.FindAction("SRPG/Camera/Move");
+        IA_CameraVerticalMove = srpg.FindAction("SRPG/Camera/VerticalMove");
+        IA_CameraZoom = srpg.FindAction("SRPG/Camera/Zoom");
 
-        IA_CameraRotate.Enable();
-        IA_CameraMove.Enable();
+        // 전체 활성화
+        srpg.Enable();
     }
 
     private void OnDisable()
     {
-        IA_CameraRotate.performed -= OnLook;
-        IA_CameraMove.performed -= OnCameraMove;
         IA_CameraRotate.Disable();
         IA_CameraMove.Disable();
+        IA_CameraVerticalMove.Disable();
     }
 
     void Update()
     {
         HandleRotation();
         HandleMovement();
+        HandleZoom();
+        ApplyBounds();
 
         if (isFollowing)
         {
@@ -64,12 +81,12 @@ public class CameraManager: MonoBehaviour
             Vector2 mouseInput = IA_CameraRotate.ReadValue<Vector2>();
 
             yRotation += mouseInput.x * sensitivity;
-            xRotation += mouseInput.y * sensitivity;
+            xRotation -= mouseInput.y * sensitivity;
 
             xRotation = Mathf.Clamp(xRotation, topClamp, bottomClamp);
 
             // 쿼터니언 적용
-            transform.rotation = Quaternion.Euler(xRotation, yRotation, 0f);
+            transform.rotation = Quaternion.Euler(xRotation + rotX, yRotation, 0f);
             playerObject.rotation = Quaternion.Euler(0f, yRotation, 0f);
         }
     }
@@ -77,14 +94,43 @@ public class CameraManager: MonoBehaviour
     private void HandleMovement()
     {
         Vector2 moveInput = IA_CameraMove.ReadValue<Vector2>();
+        float verticalInput = IA_CameraVerticalMove.ReadValue<float>();
+        Vector3 direction = Vector3.zero;
 
-        if (moveInput.sqrMagnitude > 0)
+        if (moveInput.sqrMagnitude > 0 || Mathf.Abs(verticalInput) > 0)
         {
             isFollowing = false; // 마우스/키보드로 직접 움직이면 팔로우 중단
-            Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
-            move.y = 0; // 카메라가 위아래로 박히지 않게 고정
-            transform.position += move.normalized * moveSpeed * Time.deltaTime;
+
+            // 수평 방향 계산 (카메라 기준)
+            Vector3 horizontalDir = transform.right * moveInput.x + transform.forward * moveInput.y;
+            // 수직 방향 계산 (월드 기준)
+            Vector3 verticalDir = Vector3.up * verticalInput;
+
+            direction = horizontalDir + verticalDir;
+
+            transform.position += direction * moveSpeed * Time.deltaTime;
         }
+    }
+    private void HandleZoom()
+    {
+        float zoomInput = IA_CameraZoom.ReadValue<float>();
+
+        if (Mathf.Abs(zoomInput) > 0)
+        {
+            // FOV를 조절하여 줌 구현 (가장 일반적인 방식)
+            cam.fieldOfView -= zoomInput * zoomSpeed * Time.deltaTime;
+            cam.fieldOfView = Mathf.Clamp(cam.fieldOfView, minFOV, maxFOV);
+        }
+    }
+
+    private void ApplyBounds()
+    {
+        // 현재 위치를 가져와서 제한 범위 내로 고정(Clamp)
+        float clampedX = Mathf.Clamp(transform.position.x, minPos.x, maxPos.x);
+        float clampedY = Mathf.Clamp(transform.position.y, minHeight, maxHeight);
+        float clampedZ = Mathf.Clamp(transform.position.z, minPos.y, maxPos.y);
+
+        transform.position = new Vector3(clampedX, clampedY, clampedZ);
     }
 
     private void FollowPlayer()
@@ -95,33 +141,5 @@ public class CameraManager: MonoBehaviour
 
         // 부드러운 추적 효과 (Lerp)
         transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * 5f);
-
-        // 카메라 효과같은거 있으면 좋을듯
-        // transform.position = new Vector3(playerObject.position.x, posY, playerObject.position.z + posZ);
-    }
-    private void OnLook(InputAction.CallbackContext context)
-    {
-        // 마우스 오른쪽 버튼 클릭 여부 체크
-        if (Mouse.current.rightButton.isPressed)
-        {
-            Vector2 mouseInput = context.ReadValue<Vector2>();
-
-            yRotation += mouseInput.x * sensitivity;
-            xRotation -= mouseInput.y * sensitivity;
-            xRotation = Mathf.Clamp(xRotation, topClamp, bottomClamp);
-
-            // 카메라/플레이어 회전 적용
-            transform.localRotation = Quaternion.Euler(xRotation, yRotation, 0f);
-            playerObject.transform.localRotation = Quaternion.Euler(0f, yRotation, 0f);
-        }
-    }
-
-    private void OnCameraMove(InputAction.CallbackContext context)
-    {
-        // 카메라가 바라보는 방향 기준으로 이동 방향 계산
-        Vector2 moveInput = context.ReadValue<Vector2>();
-
-        Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
-        transform.position += move * moveSpeed * Time.deltaTime;
     }
 }

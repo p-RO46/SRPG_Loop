@@ -50,6 +50,24 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
+                },
+                {
+                    "name": "SRPG/Camera/VerticalMove",
+                    "type": "Value",
+                    "id": "750f0d25-cecc-44fc-98a7-40ee2864cfc8",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "SRPG/Camera/Zoom",
+                    "type": "Value",
+                    "id": "46548dfe-847c-43ea-9f57-a6b004ac6c7b",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -195,6 +213,50 @@
                     "action": "SRPG/Camera/Move",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "1D Axis",
+                    "id": "04b5f796-83c4-4094-9011-69c3f6f2e97b",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SRPG/Camera/VerticalMove",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "negative",
+                    "id": "cdb54ffc-7c2c-419a-ba84-dc27f35ad303",
+                    "path": "<Keyboard>/q",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SRPG/Camera/VerticalMove",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "positive",
+                    "id": "349a60a4-ce50-41d9-b911-9a4fc343ec47",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SRPG/Camera/VerticalMove",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "c2e6d504-1d5a-444b-8000-f7863946ae2e",
+                    "path": "<Mouse>/scroll/y",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SRPG/Camera/Zoom",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         },

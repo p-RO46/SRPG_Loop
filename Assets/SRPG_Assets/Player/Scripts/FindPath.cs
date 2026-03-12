@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -21,77 +20,27 @@ public class FindPath // 몬스터들에게도 적용되는 코드
             for (int y = 0; y < _height; y++)
             {
                 _nodes[x, y] = new Node(x, y, mapManager.TileMap[x][y].tileType == E_TileType.MOVABLE);
+                if(mapManager.EnemyExist(x, y) != null)
+                {
+                    _nodes[x, y].isWalkable = false;
+                }
             }
         }
     }
 
-    /*
-    public SkillLocation[,] CanReach(Vector2Int cur, int movement)
-    {
-    // 필수: 모든 노드의 데이터 초기화
-    for (int x = 0; x < _width; x++) {
-        for (int y = 0; y < _height; y++) {
-            _nodes[x, y].G = 999999;
-            _nodes[x, y].H = 0;
-            _nodes[x, y].parent = null;
-        }
-    }
-        // 현재 위치를 중심으로 했을 때, 도달 가능한 범위를 표시한 배열을 반환한다.
-        int max = movement * 2 + 1;
-        Node center = new Node(cur.x, cur.y, true); // 시작(중심)위치
-        Node[,] temp = new Node[max, max];
-        SkillLocation[,] result = new SkillLocation[max, max];
-
-        for (int i = 0; i < max; i++)
-        {
-            int x = cur.x - movement + i;
-            if (x < 0 || x >= _width)
-            {
-                for (int j = 0; j < max; j++)
-                {
-                    temp[i, j] = new Node(x, cur.y - movement + j, false);
-                }
-                continue;
-            }
-
-            for (int j = 0; j < max; j++)
-            {
-                int y = cur.y - movement + j;
-                if (y < 0 || y >= _height)
-                {
-                    temp[i, j] = new Node(x, y, false);
-                    continue;
-                }
-
-                temp[i, j] = new Node(x, y, mapManager.TileMap[x][y].tileType == E_TileType.MOVABLE);
-            }
-        }
-
-        for (int i = 0; i < max; i++)
-        {
-            for(int j = 0; j < max; j++)
-            {
-                if (!temp[i, j].isWalkable) continue;
-                List<Node> path = FindShortestPath(center.pos, temp[i, j].pos);
-                if (path != null && path.Count <= movement)
-                {
-                    result[i, j].location = temp[i, j].pos;
-                    result[i, j].skill = 1; // 이동 가능하면 1, 아니면 0
-                }
-            }
-        }
-        result[movement, movement].skill = 0; // 현재 서 있는 위치는 제외
-        return result;
-    }
-    */
     // BFS 방식 사용
     public SkillLocation[,] CanReach(Vector2Int startPos, int movement)
     {
         int max = movement * 2 + 1;
         SkillLocation[,] result = new SkillLocation[max, max];
 
+        // 1. 시작점 데이터 미리 설정 (필요한 경우)
+        result[movement, movement].location = startPos;
+        result[movement, movement].skill = 0;
+
         // 방문 여부와 거리를 체크하기 위한 큐 (BFS)
         Queue<Vector2Int> queue = new Queue<Vector2Int>();
+        // Dictionary 대신 단순 배열을 쓰면 더 빠르지만, 맵이 너무 크다면 Dictionary가 낫습니다.
         Dictionary<Vector2Int, int> visited = new Dictionary<Vector2Int, int>();
 
         queue.Enqueue(startPos);
@@ -135,52 +84,45 @@ public class FindPath // 몬스터들에게도 적용되는 코드
 
     public List<Node> FindShortestPath(Vector2Int start, Vector2Int end)
     {
+        foreach(Node node in _nodes)
+        {
+            node.parent = null;
+        }
+
         Node startNode = _nodes[start.x, start.y];
         Node targetNode = _nodes[end.x, end.y];
 
-        // 아직 탐색하지 않은 노드들을 저장 (F값이 낮은 순으로 정렬)
-        var openList = new PriorityQueue<Node, int>();
-        var openSet = new HashSet<Node>();
-        // 이미 탐색 완료된 노드들
-        var closedList = new HashSet<Node>();
+        // BFS는 일반 Queue를 사용합니다. (PriorityQueue 필요 없음!)
+        Queue<Node> queue = new Queue<Node>();
+        // 방문 여부를 체크할 집합
+        HashSet<Node> visited = new HashSet<Node>();
 
-        // (1) 열린 리스트에 시작 노드를 넣는다.
-        openList.Enqueue(startNode, startNode.F);
-        openSet.Add(startNode);
+        queue.Enqueue(startNode);
+        visited.Add(startNode);
 
-        while (openList.Count > 0)
+        while (queue.Count > 0)
         {
-            Node currentNode = openList.Dequeue();
+            Node currentNode = queue.Dequeue();
 
+            // 목적지에 도착했다면 경로 역추적
             if (currentNode == targetNode)
             {
                 return RetracePath(startNode, targetNode);
             }
 
-            // 탐색 완료
-            closedList.Add(currentNode);
-            // (2) 현재 노드에 인접한, 지나갈 수 있는 노드를 열린 리스트에 넣어준다.
-            //     이미 탐색한 노드도 제외?
             foreach (Node neighbor in GetNeighbors(currentNode))
             {
-                if (!neighbor.isWalkable || closedList.Contains(neighbor))
-                    continue;
-
-                // 이동 비용 계산 (상하좌우 1, 대각선 제외)
-                int newMovementCostToNeighbor = currentNode.G + GetDistance(currentNode, neighbor);
-
-                if(newMovementCostToNeighbor < neighbor.G || !Contains(openSet, neighbor))
+                // 이동 가능하고, 아직 방문하지 않은 타일만 탐색
+                if (neighbor.isWalkable && !visited.Contains(neighbor))
                 {
-                    neighbor.G = newMovementCostToNeighbor;
-                    neighbor.H = GetDistance(neighbor, targetNode);
-                    neighbor.parent = currentNode;
-
-                    openList.Enqueue(neighbor, neighbor.F);
+                    visited.Add(neighbor);
+                    neighbor.parent = currentNode; // 경로를 기억하기 위해 부모 설정
+                    queue.Enqueue(neighbor);
                 }
             }
         }
 
-        return null;
+        return null; // 경로 없음
     }
 
     private List<Node> RetracePath(Node startNode, Node targetNode)
@@ -195,12 +137,6 @@ public class FindPath // 몬스터들에게도 적용되는 코드
         }
         path.Reverse();
         return path;
-    }
-
-    private int GetDistance(Node nodeA, Node nodeB)
-    {
-        // 맨해튼 거리 공식
-        return Math.Abs(nodeA.pos.x - nodeB.pos.x) + Math.Abs(nodeA.pos.y - nodeB.pos.y);
     }
 
     private List<Node> GetNeighbors(Node node)
@@ -224,15 +160,5 @@ public class FindPath // 몬스터들에게도 적용되는 코드
         }
 
         return neighbors;
-    }
-
-    private bool Contains(HashSet<Node> hs, Node node)
-    {
-        // 간단한 구현을 위해 UnorderedItems 사용 (성능 최적화 필요 시 별도 체크 로직 구현 가능)
-        foreach (var item in hs)
-        {
-            if (item == node) return true;
-        }
-        return false;
     }
 }
